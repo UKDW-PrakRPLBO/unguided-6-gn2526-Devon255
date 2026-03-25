@@ -2,10 +2,7 @@ package org.rplbo.app.Manager;
 import org.rplbo.app.DBConnectionManager;
 import org.rplbo.app.Data.User;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +31,7 @@ import java.util.List;
 
 public class UserManager {
     private Connection connection;
+    private Statement stmt;
 
     // Constructor untuk menerima koneksi dari Main / DBConfig
     public UserManager(Connection connection) {
@@ -47,17 +45,63 @@ public class UserManager {
     // TODO LENGKAPILAH SETIAP METHOD YANG KOSONG DIBAWAH INI
     // --- METHOD CARI USER SESUAI ROLE ---
     public List<User> getUsersByRole(String role) {
+        String query = "SELECT * FROM users WHERE role = ?";
         List<User> userList = new ArrayList<>();
+        try{PreparedStatement stmt = this.connection.prepareStatement(query);
+            stmt.setString(1, role);
+            ResultSet rs = stmt.executeQuery();
+            while(rs.next()){
+                String username = rs.getString("username");
+                String password = rs.getString("password");
+                String email = rs.getString("email");
+                String roles = rs.getString("role");
+
+                userList.add(new User(password, roles, username, email));
+
+            }
+
+        }catch(Exception e){
+            System.err.println(e.getMessage());
+        }
         return userList;
     }
 
     // --- METHOD REGISTER (INSERT) ---
     public boolean registerUser(String username, String password, String email, String role) {
+        String query = "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)";
+        try{PreparedStatement stmt = this.connection.prepareStatement(query);
+
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            stmt.setString(3, email);
+            stmt.setString(4, role);
+
+            int hasil = stmt.executeUpdate();
+            if (hasil > 0) {
+                return true;
+            }
+
+        } catch (SQLException e){
+            System.err.println(e.getMessage());
+        }
         return false;
     }
 
     // --- METHOD LOGIN (SELECT) ---
     public boolean authenticateUser(String username, String password) {
+        String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+        try {PreparedStatement stmt = this.connection.prepareStatement(query);
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            try (ResultSet rs =  stmt.executeQuery()) {
+                if (rs.next()) {
+                    return true;
+                }
+            }
+
+        } catch (SQLException e){
+            System.err.println(e.getMessage());
+        }
         return false;
     }
 
